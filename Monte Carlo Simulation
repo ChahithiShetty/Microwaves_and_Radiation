@@ -1,0 +1,40 @@
+%% EXPERIMENT 9 - PART 2
+% Monte Carlo Simulation for BPSK over Rayleigh Fading Channel
+
+clc;
+close all;
+
+%% Parameters
+numBits = 20000;                % Number of bits to simulate
+SNR_dB = -5:0.5:35;             % SNR in dB
+SNR_linear = 10.^(SNR_dB / 10); % Convert SNR from dB to linear
+noiseVariance = 1;              % Variance (σ^2) of Rayleigh fading
+sigma = sqrt(noiseVariance);    % Standard deviation
+
+% Pre-allocate arrays for simulated error probabilities
+Pe_BPSK_simulated = zeros(1, length(SNR_linear));
+
+%% Monte Carlo Simulation for BPSK under Rayleigh Fading
+for idx = 1:length(SNR_linear)
+    snr = SNR_linear(idx);
+    
+    % Generate random BPSK symbols: 0 -> -1, 1 -> +1
+    dataBits = randi([0, 1], 1, numBits);
+    txSymbols = 2 * dataBits - 1;
+    
+    % Rayleigh fading: each sample has different gain
+    fadingGain = sqrt(-2 * noiseVariance * log(rand(1, numBits))); % Rayleigh distributed
+    fadedSignal = fadingGain .* txSymbols;
+    
+    % AWGN noise
+    noise = sqrt(1/(2 * snr)) * randn(1, numBits);
+    
+    % Received signal
+    rxSignal = fadedSignal + noise;
+    
+    % Receiver uses fading knowledge to equalize (coherent detection)
+    rxEqualized = rxSignal ./ fadingGain;
+    
+    % Decision: if > 0 → 1, else → 0
+    receivedBits = rxEqualized > 0;
+    
