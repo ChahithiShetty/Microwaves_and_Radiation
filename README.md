@@ -1,7 +1,7 @@
-🔹Experiment 9 – Rayleigh Fading Channel Performance Analysis
+**********Experiment 9 – Rayleigh Fading Channel Performance Analysis
 This experiment is divided into two parts:
 
-✅ Part 1: Statistical Properties of Rayleigh Fading
+Part 1: Statistical Properties of Rayleigh Fading
 Generate and visualize the statistical nature of a Rayleigh fading channel.
 
 -Creates 20,000 random values that follow the Rayleigh distribution.
@@ -11,7 +11,7 @@ Generate and visualize the statistical nature of a Rayleigh fading channel.
 -Mathematical modeling of Rayleigh PDF.
 -Analytical BER expressions for each modulation scheme.
 
-✅ Part 2: Monte Carlo Simulation of BPSK in Rayleigh Fading
+Part 2: Monte Carlo Simulation of BPSK in Rayleigh Fading
 Perform a practical simulation (Monte Carlo) of how BPSK performs under Rayleigh fading.
 
 -Generates a long bitstream, modulates it using BPSK.
@@ -23,7 +23,7 @@ Perform a practical simulation (Monte Carlo) of how BPSK performs under Rayleigh
 -BER estimated from real errors across different SNR values.
 
 
-🔹 Experiment 10 – Simulation of an OFDM Transmitter and Receiver
+**********Experiment 10 – Simulation of an OFDM Transmitter and Receiver
 Simulate an entire OFDM (Orthogonal Frequency Division Multiplexing) system using BPSK modulation.
 
 -Transmitter: Random bits → BPSK → IFFT → Cyclic Prefix
