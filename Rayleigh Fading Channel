@@ -1,0 +1,68 @@
+%% EXPERIMENT 9 - PERFORMANCE ANALYSIS OF RAYLEIGH FADING CHANNEL
+
+% Generate a sequence of N=20,000 statistically independent and identically distributed Rayleigh random variables. 
+% Plot the histogram for the 20000 symbols and compare it with the corresponding Rayleigh probability density function.
+
+
+
+clc;
+close all;
+
+%% PART 1: Generate Rayleigh Random Variables
+N = 20000; % Number of samples
+SNR_dB = -5:0.5:35; % SNR range in dB
+SNR_linear = 10.^(SNR_dB / 10); % Convert SNR from dB to linear scale
+
+variance = 1; % Variance σ²
+sigma = sqrt(variance); % Standard deviation
+
+% Generate Rayleigh distributed random variables using inverse transform method
+uniform_randoms = rand(1, N); 
+rayleigh_samples = sqrt(-2 * variance * log(uniform_randoms)); 
+
+% Plot Histogram of Rayleigh samples
+figure;
+histogram(rayleigh_samples, 100);
+title("Histogram of Rayleigh Random Variables");
+xlabel("Amplitude");
+ylabel("Frequency");
+
+% Plot theoretical Rayleigh PDF
+x_vals = 0:0.01:10;
+rayleigh_pdf = (x_vals / variance) .* exp(-(x_vals.^2) / (2 * variance));
+
+figure;
+plot(x_vals, rayleigh_pdf, 'LineWidth', 2);
+title("Rayleigh Probability Density Function (PDF)");
+xlabel("Amplitude");
+ylabel("Probability Density");
+legend("Theoretical PDF");
+
+%% PART 2: Error Probability Calculations
+
+% Theoretical error probabilities under Rayleigh fading
+Pe_BPSK_Rayleigh = 0.5 * (1 - sqrt((variance * SNR_linear) ./ (1 + variance * SNR_linear)));
+Pe_BFSK_Rayleigh = 0.5 * (1 - sqrt((variance * SNR_linear) ./ (2 + variance * SNR_linear)));
+Pe_DPSK_Rayleigh = 0.5 ./ (1 + variance * SNR_linear);
+
+% Error probabilities in AWGN (no fading)
+Pe_BPSK_AWGN = 0.5 * erfc(sqrt(SNR_linear));
+Pe_BFSK_AWGN = 0.5 * erfc(sqrt(SNR_linear / 2));
+Pe_DPSK_AWGN = 0.5 * exp(-SNR_linear); % Non-coherent detection
+
+% Plot all error probabilities
+figure;
+semilogy(SNR_dB, Pe_BPSK_Rayleigh, 'r.-', ...
+         SNR_dB, Pe_BFSK_Rayleigh, 'r*-', ...
+         SNR_dB, Pe_DPSK_Rayleigh, 'r--', ...
+         SNR_dB, Pe_BPSK_AWGN, 'b.-', ...
+         SNR_dB, Pe_BFSK_AWGN, 'b*-', ...
+         SNR_dB, Pe_DPSK_AWGN, 'b--', ...
+         'LineWidth', 1.5);
+grid on;
+axis([-5 35 1e-6 1]);
+title('Bit Error Rate Performance in Rayleigh Fading and AWGN');
+xlabel('SNR (dB)');
+ylabel('Bit Error Rate (BER)');
+legend('BPSK - Rayleigh', 'BFSK - Rayleigh', 'DPSK - Rayleigh', ...
+       'BPSK - AWGN', 'BFSK - AWGN', 'DPSK - AWGN');
