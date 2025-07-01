@@ -1,0 +1,82 @@
+%% EXPERIMENT 10 – SIMULATION OF THE OFDM TRANSMITTER AND RECEIVER
+
+clear all; close all;
+
+%% PARAMETERS
+nFFT = 64;              % FFT size (number of subcarriers)
+nDSC = 52;              % Number of data subcarriers (used for transmission)
+nBitsPerSym = nDSC;     % One BPSK bit per subcarrier
+nSymbols = 1e4;         % Total number of OFDM symbols
+EbN0_dB = 0:10;         % Range of Eb/N0 values in dB
+
+% Convert Eb/N0 to Es/N0 (accounts for subcarrier and CP overhead)
+EsN0_dB = EbN0_dB + 10*log10(nDSC/nFFT) + 10*log10(nFFT/(nFFT+16)); 
+
+%% SIMULATION
+for i = 1:length(EbN0_dB)
+    
+    %% TRANSMITTER
+    % Generate random bits (0 or 1)
+    bits = randi([0 1], 1, nBitsPerSym * nSymbols);
+    
+    % BPSK Modulation: 0 → -1, 1 → +1
+    modSymbols = 2 * bits - 1;
+    modSymbols = reshape(modSymbols, nBitsPerSym, nSymbols).';
+    
+    % Map BPSK symbols onto 52 subcarriers ([-26 to -1, +1 to +26]), insert zeros elsewhere
+    xFreq = [zeros(nSymbols, 6), ...
+             modSymbols(:, 1:nBitsPerSym/2), ...
+             zeros(nSymbols, 1), ...
+             modSymbols(:, nBitsPerSym/2+1:end), ...
+             zeros(nSymbols, 5)];
+         
+    % IFFT (Time domain signal) and normalize power
+    txSignal = (nFFT / sqrt(nDSC)) * ifft(fftshift(xFreq.')).';
+    
+    % Add cyclic prefix (last 16 samples of IFFT output)
+    txWithCP = [txSignal(:, end-15:end), txSignal];
+    
+    % Convert to serial stream
+    txSerial = reshape(txWithCP.', 1, []);
+    
+    %% CHANNEL: Add AWGN noise
+    noise = (1/sqrt(2)) * (randn(1, length(txSerial)) + 1j * randn(1, length(txSerial)));
+    rxSerial = sqrt(80/64) * txSerial + 10^(-EsN0_dB(i)/20) * noise;
+    
+    %% RECEIVER
+    % Reshape into symbol-wise rows (80 samples per symbol)
+    rxSymbols = reshape(rxSerial, 80, nSymbols).';
+    
+    % Remove cyclic prefix (first 16 samples)
+    rxSymbols = rxSymbols(:, 17:end);
+    
+    % FFT to return to frequency domain
+    rxFreq = (sqrt(nDSC) / nFFT) * fftshift(fft(rxSymbols.')).';
+    
+    % Extract only the data subcarriers (remove nulls)
+    dataRx = rxFreq(:, [7:32, 34:59]);  % Matches insertion in transmitter
+    
+    %% BPSK Demodulation
+    rxBits = real(dataRx) > 0;
+    rxBits = reshape(rxBits.', 1, []);
+    
+    %% BER Calculation
+    nErrors(i) = sum(bits ~= rxBits);
+end
+
+% Calculate simulated BER
+simBER = nErrors / (nSymbols * nBitsPerSym);
+
+% Theoretical BER for BPSK over AWGN
+theoryBER = 0.5 * erfc(sqrt(10.^(EbN0_dB/10)));
+
+%% PLOTTING RESULTS
+figure;
+semilogy(EbN0_dB, theoryBER, 'bs-', 'LineWidth', 2); hold on;
+semilogy(EbN0_dB, simBER, 'mx-', 'LineWidth', 2);
+grid on;
+xlabel('Eb/No (dB)');
+ylabel('Bit Error Rate');
+title('BER Performance of BPSK using OFDM');
+legend('Theoretical', 'Simulated');
+axis([0 10 1e-5 1]);
